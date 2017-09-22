@@ -105,45 +105,67 @@ func (p *Gce) Process(ingObj kubelego.Ingress) (err error) {
 	hostsNotConfigured := getHostMap(ingObj)
 
 	var rulesNew []k8sExtensions.IngressRule
-	for _, rule := range ingApi.Spec.Rules {
 
-		pathsNew := []k8sExtensions.HTTPIngressPath{}
+	// If this is a default only ingress, we're only going to add a single path rule for *
+	// GCE will match our verification path first and all other traffic goes to the default backend
+	if ingObj.IngressDefaultOnly() && ingApi.Spec.Backend != nil {
 
-		// add challenge endpoints first, if needed
-		if _, hostEnabled := hostsEnabled[rule.Host]; hostEnabled {
-			delete(hostsNotConfigured, rule.Host)
-			pathsNew = []k8sExtensions.HTTPIngressPath{
-				p.getHTTPIngressPath(),
-			}
-		}
-
-		// remove existing challenge paths
-		for _, path := range rule.HTTP.Paths {
-			if path.Path == challengePath {
-				continue
-			}
-			pathsNew = append(pathsNew, path)
-		}
-
-		// add rule if it contains at least one path
-		if len(pathsNew) > 0 {
-			rule.HTTP.Paths = pathsNew
-			rulesNew = append(rulesNew, rule)
-		}
-	}
-
-	// add missing hosts
-	for host, _ := range hostsNotConfigured {
-		rulesNew = append(rulesNew, k8sExtensions.IngressRule{
-			Host: host,
-			IngressRuleValue: k8sExtensions.IngressRuleValue{
-				HTTP: &k8sExtensions.HTTPIngressRuleValue{
-					Paths: []k8sExtensions.HTTPIngressPath{
-						p.getHTTPIngressPath(),
+		// there should only be one rule for validation
+		rulesNew = []k8sExtensions.IngressRule{
+			k8sExtensions.IngressRule{
+				IngressRuleValue: k8sExtensions.IngressRuleValue{
+					HTTP: &k8sExtensions.HTTPIngressRuleValue{
+						Paths: []k8sExtensions.HTTPIngressPath{
+							p.getHTTPIngressPath(),
+						},
 					},
 				},
 			},
-		})
+		}
+
+	} else {
+
+		for _, rule := range ingApi.Spec.Rules {
+
+			pathsNew := []k8sExtensions.HTTPIngressPath{}
+
+			// add challenge endpoints first, if needed
+			if _, hostEnabled := hostsEnabled[rule.Host]; hostEnabled {
+				delete(hostsNotConfigured, rule.Host)
+				pathsNew = []k8sExtensions.HTTPIngressPath{
+					p.getHTTPIngressPath(),
+				}
+			}
+
+			// remove existing challenge paths
+			for _, path := range rule.HTTP.Paths {
+				if path.Path == challengePath {
+					continue
+				}
+				pathsNew = append(pathsNew, path)
+			}
+
+			// add rule if it contains at least one path
+			if len(pathsNew) > 0 {
+				rule.HTTP.Paths = pathsNew
+				rulesNew = append(rulesNew, rule)
+			}
+		}
+
+		// add missing hosts
+		for host, _ := range hostsNotConfigured {
+			rulesNew = append(rulesNew, k8sExtensions.IngressRule{
+				Host: host,
+				IngressRuleValue: k8sExtensions.IngressRuleValue{
+					HTTP: &k8sExtensions.HTTPIngressRuleValue{
+						Paths: []k8sExtensions.HTTPIngressPath{
+							p.getHTTPIngressPath(),
+						},
+					},
+				},
+			})
+		}
+
 	}
 
 	ingApi.Spec.Rules = rulesNew

@@ -182,6 +182,15 @@ func (i *Ingress) IngressProvider() string {
 	return strings.ToLower(val)
 }
 
+// IngressDefaultOnly returns true if we should treat this ingress controller as having only a default service and no path rules
+func (i *Ingress) IngressDefaultOnly() bool {
+	val, ok := i.IngressApi.Annotations[kubelego.AnnotationIngressDefaultOnly]
+	if !ok {
+		return false
+	}
+	return strings.ToLower(val) == "true"
+}
+
 func (i *Ingress) Ignore() bool {
 	err := IgnoreIngress(i.IngressApi)
 	if err != nil {

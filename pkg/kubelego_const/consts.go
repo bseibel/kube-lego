@@ -19,6 +19,7 @@ const AnnotationIngressChallengeEndpoints = "kubernetes.io/tls-acme-challenge-en
 const AnnotationIngressChallengeEndpointsHash = "kubernetes.io/tls-acme-challenge-endpoints-hash"
 const AnnotationIngressClass = "kubernetes.io/ingress.class"
 const AnnotationIngressProvider = "kubernetes.io/ingress.provider"
+const AnnotationIngressDefaultOnly = "kubernetes.io/ingress.defaultonly"
 const AnnotationSslRedirect = "ingress.kubernetes.io/ssl-redirect"
 const AnnotationKubeLegoManaged = "kubernetes.io/kube-lego-managed"
 const AnnotationWhitelistSourceRange = "ingress.kubernetes.io/whitelist-source-range"

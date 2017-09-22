@@ -72,6 +72,7 @@ type Ingress interface {
 	Delete() error
 	IngressClass() string
 	IngressProvider() string
+	IngressDefaultOnly() bool
 	Tls() []Tls
 	Ignore() bool
 }
